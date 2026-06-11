@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ScanGo – Customer App</title>
+  <meta name="description" content="ScanGo Customer Self-Checkout Mobile App" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #6C63FF;
+      --primary-dark: #4B44CC;
+      --secondary: #00D4AA;
+      --accent: #FF6B6B;
+      --warning: #FFB700;
+      --dark: #0D0D1F;
+      --dark2: #14142B;
+      --card: rgba(255,255,255,0.06);
+      --card-border: rgba(255,255,255,0.1);
+      --text: #F0F0FF;
+      --muted: #8888AA;
+      --surface: #1E1E3F;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0A0A1A 0%, #12122A 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      padding: 40px 20px;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at 30% 40%, rgba(108,99,255,0.15) 0%, transparent 60%),
+                  radial-gradient(ellipse at 70% 60%, rgba(0,212,170,0.1) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    /* Phone frame */
+    .phone-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+    .phone-label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: var(--dark2);
+      border-radius: 50px;
+      border: 8px solid #2A2A4A;
+      box-shadow: 0 0 0 2px #1A1A3A, 0 40px 100px rgba(0,0,0,0.6), 0 0 60px rgba(108,99,255,0.15);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-notch {
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 130px; height: 32px;
+      background: #1A1A3A;
+      border-radius: 0 0 20px 20px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .notch-cam { width: 12px; height: 12px; background: #0A0A1A; border-radius: 50%; border: 2px solid #2A2A4A; }
+    .notch-speaker { width: 40px; height: 4px; background: #0A0A1A; border-radius: 4px; }
+    .status-bar {
+      padding: 36px 24px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      font-weight: 600;
+      z-index: 10;
+    }
+    .status-icons { display: flex; gap: 6px; align-items: center; }
+
+    .screen-container {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 80px;
+      display: none;
+      flex-direction: column;
+      scrollbar-width: none;
+    }
+    .screen::-webkit-scrollbar { display: none; }
+    .screen.active { display: flex; animation: slideIn 0.3s ease; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .bottom-nav {
+      height: 80px;
+      background: rgba(14,14,30,0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px 16px;
+      z-index: 50;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 12px;
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+    }
+    .nav-item.active { color: var(--primary); }
+    .nav-item .nav-icon { font-size: 1.3rem; }
+    .nav-item .nav-label { font-size: 0.65rem; font-weight: 600; }
+    .nav-scan-btn {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(108,99,255,0.5);
+      border: none;
+      transition: all 0.2s;
+      transform: translateY(-8px);
+    }
+    .nav-scan-btn:hover { transform: translateY(-10px) scale(1.05); }
+
+    /* SPLASH */
+    #splash {
+      background: linear-gradient(135deg, #0D0D1F 0%, #1A1A3A 100%);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 32px;
+    }
+    .splash-logo {
+      width: 100px; height: 100px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin: 0 auto 24px;
+      box-shadow: 0 20px 60px rgba(108,99,255,0.4);
+      animation: logoFloat 3s ease-in-out infinite;
+    }
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .splash-title { font-size: 2.5rem; font-weight: 900; margin-bottom: 8px; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .splash-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 48px; line-height: 1.6; }
+    .splash-features { display: flex; flex-direction: column; gap: 16px; margin-bottom: 48px; text-align: left; }
+    .splash-feature { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px 16px; }
+    .splash-feature-icon { font-size: 1.5rem; }
+    .splash-feature-text { font-size: 0.9rem; }
+    .splash-feature-text strong { display: block; font-weight: 600; }
+    .splash-feature-text span { color: var(--muted); font-size: 0.8rem; }
+
+    /* LOGIN */
+    #login { padding: 40px 24px; align-items: center; }
+    .login-header { text-align: center; margin-bottom: 40px; }
+    .login-back { align-self: flex-start; font-size: 1.5rem; cursor: pointer; margin-bottom: 24px; background: none; border: none; color: var(--text); }
+    .login-header h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
+    .login-header p { color: var(--muted); font-size: 0.9rem; }
+    .form-group { width: 100%; margin-bottom: 20px; }
+    .form-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-input {
+      width: 100%;
+      padding: 16px 18px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-input:focus { border-color: var(--primary); background: rgba(108,99,255,0.1); }
+    .form-input::placeholder { color: var(--muted); }
+    .otp-row { display: flex; gap: 10px; }
+    .otp-box {
+      flex: 1;
+      padding: 16px 0;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .otp-box:focus { border-color: var(--primary); background: rgba(108,99,255,0.1); }
+    .btn-full {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none;
+      border-radius: 16px;
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(108,99,255,0.4);
+    }
+    .btn-full:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,99,255,0.5); }
+    .btn-outline {
+      width: 100%;
+      padding: 16px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 12px;
+    }
+    .btn-outline:hover { border-color: var(--primary); background: rgba(108,99,255,0.08); }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; width: 100%; }
+    .divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+    .divider-text { color: var(--muted); font-size: 0.8rem; }
+    .login-step { display: none; width: 100%; }
+    .login-step.active { display: flex; flex-direction: column; align-items: center; animation: slideIn 0.3s ease; }
+    .otp-timer { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 16px; }
+    .otp-timer span { color: var(--primary); font-weight: 600; cursor: pointer; }
+
+    /* STORE SELECT */
+    #storeSelect { padding: 24px 20px; }
+    .screen-header { margin-bottom: 24px; }
+    .screen-header h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; }
+    .screen-header p { color: var(--muted); font-size: 0.85rem; }
+    .search-bar {
+      width: 100%;
+      padding: 14px 16px 14px 44px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+    .search-bar::placeholder { color: var(--muted); }
+    .search-wrap { position: relative; margin-bottom: 20px; }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1rem; }
+    .stores-list { display: flex; flex-direction: column; gap: 12px; }
+    .store-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .store-card:hover { border-color: var(--primary); background: rgba(108,99,255,0.08); }
+    .store-card.nearby { border-color: rgba(0,212,170,0.3); }
+    .store-icon { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+    .store-info { flex: 1; }
+    .store-name { font-weight: 700; margin-bottom: 2px; }
+    .store-addr { color: var(--muted); font-size: 0.8rem; }
+    .store-dist { font-size: 0.8rem; color: var(--secondary); font-weight: 600; margin-top: 2px; }
+    .store-badge { background: rgba(0,212,170,0.15); color: var(--secondary); border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+    .section-title-sm { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; margin-top: 20px; }
+
+    /* SCANNER */
+    #scanner { padding: 0; position: relative; }
+    .scanner-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .scanner-header h2 { font-size: 1.2rem; font-weight: 700; }
+    .scanner-viewport {
+      margin: 0 20px;
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      height: 260px;
+      background: #000;
+    }
+    .scanner-bg {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, #0A0A1A 0%, #1A1A3A 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .scan-line {
+      position: absolute;
+      left: 40px; right: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--secondary), transparent);
+      animation: scanMove 2s ease-in-out infinite;
+      border-radius: 2px;
+      box-shadow: 0 0 20px var(--secondary);
+    }
+    @keyframes scanMove {
+      0% { top: 40px; }
+      50% { top: calc(100% - 40px); }
+      100% { top: 40px; }
+    }
+    .corner { position: absolute; width: 40px; height: 40px; }
+    .corner.tl { top: 20px; left: 20px; border-top: 3px solid var(--secondary); border-left: 3px solid var(--secondary); border-radius: 4px 0 0 0; }
+    .corner.tr { top: 20px; right: 20px; border-top: 3px solid var(--secondary); border-right: 3px solid var(--secondary); border-radius: 0 4px 0 0; }
+    .corner.bl { bottom: 20px; left: 20px; border-bottom: 3px solid var(--secondary); border-left: 3px solid var(--secondary); border-radius: 0 0 0 4px; }
+    .corner.br { bottom: 20px; right: 20px; border-bottom: 3px solid var(--secondary); border-right: 3px solid var(--secondary); border-radius: 0 0 4px 0; }
+    .scanner-hint { text-align: center; padding: 14px; color: var(--muted); font-size: 0.82rem; }
+    .recent-scans { padding: 0 20px; }
+    .scan-result-card {
+      background: rgba(0,212,170,0.08);
+      border: 1px solid rgba(0,212,170,0.2);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 10px;
+      animation: slideIn 0.3s ease;
+    }
+    .product-thumb {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(108,99,255,0.3), rgba(0,212,170,0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .product-info { flex: 1; }
+    .product-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; }
+    .product-brand { color: var(--muted); font-size: 0.75rem; }
+    .product-price { font-size: 1rem; font-weight: 800; color: var(--secondary); }
+    .add-btn {
+      background: var(--primary);
+      border: none;
+      border-radius: 10px;
+      width: 34px; height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: white;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* CART */
+    #cart { padding: 24px 20px; }
+    .cart-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .qty-control { display: flex; align-items: center; gap: 8px; }
+    .qty-btn {
+      width: 30px; height: 30px;
+      background: rgba(255,255,255,0.08);
+      border: none;
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .qty-btn:hover { background: var(--primary); }
+    .qty-num { font-weight: 700; min-width: 18px; text-align: center; }
+    .cart-summary {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px;
+      margin-top: 16px;
+    }
+    .summary-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 0.88rem; color: var(--muted); }
+    .summary-row.total { color: var(--text); font-weight: 800; font-size: 1.05rem; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px; padding-top: 14px; }
+    .coupon-bar { display: flex; gap: 10px; margin: 14px 0; }
+    .coupon-input {
+      flex: 1; padding: 12px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+    .coupon-input::placeholder { color: var(--muted); }
+    .apply-btn {
+      padding: 12px 18px;
+      background: var(--primary);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+
+    /* CHECKOUT */
+    #checkout { padding: 24px 20px; }
+    .payment-methods { display: flex; flex-direction: column; gap: 10px; margin: 18px 0; }
+    .payment-method {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .payment-method.selected { border-color: var(--primary); background: rgba(108,99,255,0.1); }
+    .payment-icon { font-size: 1.6rem; }
+    .payment-info { flex: 1; }
+    .payment-name { font-weight: 600; font-size: 0.92rem; }
+    .payment-desc { color: var(--muted); font-size: 0.78rem; }
+    .payment-radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .payment-method.selected .payment-radio { border-color: var(--primary); background: var(--primary); }
+    .payment-method.selected .payment-radio::after { content: ''; width: 8px; height: 8px; background: white; border-radius: 50%; }
+    .checkout-summary {
+      background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(0,212,170,0.1));
+      border: 1px solid rgba(108,99,255,0.2);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .checkout-total { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 800; }
+    .loyalty-points { background: rgba(255,183,0,0.1); border: 1px solid rgba(255,183,0,0.2); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 0.82rem; }
+
+    /* RECEIPT */
+    #receipt { padding: 24px 20px; align-items: center; }
+    .receipt-success { text-align: center; margin-bottom: 20px; }
+    .success-icon {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--secondary), #00A880);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 16px;
+      box-shadow: 0 0 40px rgba(0,212,170,0.4);
+      animation: successPop 0.4s ease;
+    }
+    @keyframes successPop { 0% { transform: scale(0); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .receipt-card {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      padding: 22px;
+      margin-bottom: 14px;
+    }
+    .receipt-header { text-align: center; padding-bottom: 14px; border-bottom: 1px dashed rgba(255,255,255,0.1); margin-bottom: 14px; }
+    .receipt-shop { font-size: 1rem; font-weight: 700; }
+    .receipt-date { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+    .receipt-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .receipt-item { display: flex; justify-content: space-between; font-size: 0.84rem; }
+    .receipt-item-name { color: var(--muted); }
+    .receipt-totals { border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 14px; }
+    .receipt-row { display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 7px; }
+    .receipt-row.final { font-size: 1.05rem; font-weight: 800; color: var(--secondary); }
+    .receipt-txn { text-align: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,0.1); }
+    .txn-id { font-size: 0.68rem; color: var(--muted); font-family: monospace; }
+    .exit-qr {
+      width: 100%;
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .qr-inner {
+      width: 150px; height: 150px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 2px;
+    }
+    .qr-cell { border-radius: 2px; }
+    .exit-qr h3 { color: #0D0D1F; font-size: 0.9rem; font-weight: 700; margin-bottom: 12px; }
+    .exit-qr p { color: #666; font-size: 0.72rem; margin-top: 12px; }
+    .qr-timer { display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.2); border-radius: 10px; padding: 10px; font-size: 0.82rem; color: #FF6B6B; margin-bottom: 14px; width: 100%; }
+
+    /* PROFILE */
+    #profile { padding: 24px 20px; }
+    .profile-header {
+      text-align: center;
+      padding: 24px 0;
+      background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(0,212,170,0.05));
+      border-radius: 24px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .avatar {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.5rem;
+      box-shadow: 0 8px 30px rgba(108,99,255,0.4);
+    }
+    .profile-name { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
+    .profile-phone { color: var(--muted); font-size: 0.9rem; }
+    .loyalty-card {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 20px;
+      padding: 20px 24px;
+      margin-bottom: 18px;
+    }
+    .loyalty-label { font-size: 0.8rem; opacity: 0.8; margin-bottom: 4px; }
+    .loyalty-points-num { font-size: 2rem; font-weight: 900; margin-bottom: 4px; }
+    .loyalty-sub { font-size: 0.75rem; opacity: 0.7; }
+    .menu-list { display: flex; flex-direction: column; gap: 2px; }
+    .menu-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 12px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .menu-item:hover { background: rgba(255,255,255,0.05); }
+    .menu-icon { font-size: 1.2rem; width: 30px; text-align: center; }
+    .menu-label { flex: 1; font-weight: 500; font-size: 0.92rem; }
+    .menu-arrow { color: var(--muted); }
+    .menu-badge { background: var(--accent); color: white; border-radius: 100px; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; }
+
+    /* HOME */
+    #home { padding: 20px; }
+    .home-hero {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 24px;
+      padding: 22px;
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .home-hero::before {
+      content: '🛒';
+      position: absolute;
+      right: -10px; bottom: -10px;
+      font-size: 6rem;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    .home-greeting { font-size: 0.85rem; opacity: 0.8; margin-bottom: 4px; }
+    .home-name { font-size: 1.3rem; font-weight: 800; margin-bottom: 14px; }
+    .home-store-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.18); border-radius: 100px; padding: 6px 14px; font-size: 0.8rem; }
+    .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+    .quick-action {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quick-action:hover { border-color: var(--primary); background: rgba(108,99,255,0.08); }
+    .qa-icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .qa-label { font-weight: 600; font-size: 0.88rem; }
+    .qa-sub { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+    .offers-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 22px; scrollbar-width: none; }
+    .offers-scroll::-webkit-scrollbar { display: none; }
+    .offer-chip {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(108,99,255,0.3), rgba(0,212,170,0.2));
+      border: 1px solid rgba(108,99,255,0.3);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 135px;
+    }
+    .offer-code { font-size: 0.95rem; font-weight: 800; color: var(--secondary); }
+    .offer-desc { font-size: 0.72rem; color: var(--muted); }
+
+    /* Scan pulse ring */
+    .scan-pulse {
+      position: absolute;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: 2px solid rgba(0,212,170,0.4);
+      animation: pulsering 2s ease-out infinite;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+    }
+    .scan-pulse:nth-child(2) { animation-delay: 0.6s; }
+    .scan-pulse:nth-child(3) { animation-delay: 1.2s; }
+    @keyframes pulsering {
+      0% { transform: translate(-50%,-50%) scale(0.6); opacity: 1; }
+      100% { transform: translate(-50%,-50%) scale(2.2); opacity: 0; }
+    }
+
+    /* Floating badge on nav cart */
+    .cart-badge {
+      position: absolute;
+      top: -4px; right: -4px;
+      width: 16px; height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      font-size: 0.6rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+    }
+    .nav-icon-wrap { position: relative; display: inline-block; }
+  </style>
+</head>
+<body>
+<div class="phone-wrapper">
+  <div class="phone-label">📱 ScanGo – Customer Mobile App</div>
+  <div class="phone">
+    <div class="phone-notch">
+      <div class="notch-speaker"></div>
+      <div class="notch-cam"></div>
+    </div>
+    <div class="status-bar">
+      <span style="font-size:0.72rem;">9:41</span>
+      <div class="status-icons">
+        <span style="font-size:0.75rem;">▐▐▐▐</span>
+        <span style="font-size:0.75rem;">WiFi</span>
+        <span style="font-size:0.75rem;">🔋</span>
+      </div>
+    </div>
+
+    <div class="screen-container">
+
+      <!-- SPLASH SCREEN -->
+      <div class="screen active" id="splash">
+        <div class="splash-logo">🛒</div>
+        <div class="splash-title">ScanGo</div>
+        <p class="splash-sub">The smarter way to shop.<br/>Scan, Pay &amp; Go — no queues, no fuss.</p>
+        <div class="splash-features">
+          <div class="splash-feature">
+            <span class="splash-feature-icon">📲</span>
+            <div class="splash-feature-text">
+              <strong>Scan Any Product</strong>
+              <span>Point &amp; scan barcodes instantly</span>
+            </div>
+          </div>
+          <div class="splash-feature">
+            <span class="splash-feature-icon">💳</span>
+            <div class="splash-feature-text">
+              <strong>Pay Your Way</strong>
+              <span>UPI, Card, Wallet or Net Banking</span>
+            </div>
+          </div>
+          <div class="splash-feature">
+            <span class="splash-feature-icon">🚪</span>
+            <div class="splash-feature-text">
+              <strong>Verified Exit</strong>
+              <span>QR-based secure store exit</span>
+            </div>
+          </div>
+          <div class="splash-feature">
+            <span class="splash-feature-icon">⭐</span>
+            <div class="splash-feature-text">
+              <strong>Earn Loyalty Points</strong>
+              <span>Redeem rewards on every purchase</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-full" onclick="showScreen('login')">Get Started →</button>
+        <button class="btn-outline" onclick="showScreen('home'); setActiveNav('home')">Continue as Guest</button>
+      </div>
+
+      <!-- LOGIN SCREEN -->
+      <div class="screen" id="login">
+        <button class="login-back" onclick="showScreen('splash')">← Back</button>
+        <div class="login-header">
+          <h2>Welcome Back 👋</h2>
+          <p>Enter your mobile number to continue</p>
+        </div>
+
+        <!-- Step 1: Phone -->
+        <div class="login-step active" id="step-phone">
+          <div class="form-group">
+            <label class="form-label">Mobile Number</label>
+            <input class="form-input" type="tel" placeholder="+91 98765 43210" />
+          </div>
+          <button class="btn-full" onclick="showLoginStep('otp')">Send OTP →</button>
+          <div class="divider">
+            <div class="divider-line"></div>
+            <span class="divider-text">OR CONTINUE WITH</span>
+            <div class="divider-line"></div>
+          </div>
+          <button class="btn-outline" onclick="showScreen('storeSelect'); setActiveNav('home')">
+            🔑 Sign in with Google
+          </button>
+          <p style="color:var(--muted);font-size:0.75rem;text-align:center;margin-top:16px;line-height:1.5;">
+            By continuing, you agree to our <span style="color:var(--primary);">Terms of Service</span> and <span style="color:var(--primary);">Privacy Policy</span>
+          </p>
+        </div>
+
+        <!-- Step 2: OTP -->
+        <div class="login-step" id="step-otp">
+          <p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;text-align:center;">
+            OTP sent to <strong style="color:var(--text);">+91 98765 43210</strong>
+          </p>
+          <div class="form-group">
+            <label class="form-label">Enter 6-digit OTP</label>
+            <div class="otp-row">
+              <input class="otp-box" type="text" maxlength="1" />
+              <input class="otp-box" type="text" maxlength="1" />
+              <input class="otp-box" type="text" maxlength="1" />
+              <input class="otp-box" type="text" maxlength="1" />
+              <input class="otp-box" type="text" maxlength="1" />
+              <input class="otp-box" type="text" maxlength="1" />
+            </div>
+          </div>
+          <button class="btn-full" onclick="showScreen('storeSelect'); setActiveNav('home')">
+            Verify OTP ✓
+          </button>
+          <div class="otp-timer">
+            Resend OTP in <span id="otpTimerVal">00:45</span>
+          </div>
+          <button class="btn-outline" onclick="showLoginStep('phone')" style="margin-top:8px;">
+            ← Change Number
+          </button>
+        </div>
+      </div>
+
+      <!-- STORE SELECT SCREEN -->
+      <div class="screen" id="storeSelect">
+        <div class="screen-header">
+          <h2>🏪 Select Store</h2>
+          <p>Choose your current shopping location</p>
+        </div>
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-bar" placeholder="Search by store name or area…" />
+        </div>
+
+        <div class="section-title-sm">📍 Nearby Stores</div>
+        <div class="stores-list">
+          <div class="store-card nearby" onclick="showScreen('home'); setActiveNav('home')">
+            <div class="store-icon">🛒</div>
+            <div class="store-info">
+              <div class="store-name">FreshMart – Koramangala</div>
+              <div class="store-addr">No. 12, 5th Block, Koramangala, Bengaluru</div>
+              <div class="store-dist">📍 0.3 km away · Open until 10 PM</div>
+            </div>
+            <span class="store-badge">NEAREST</span>
+          </div>
+          <div class="store-card" onclick="showScreen('home'); setActiveNav('home')">
+            <div class="store-icon">🛒</div>
+            <div class="store-info">
+              <div class="store-name">FreshMart – Indiranagar</div>
+              <div class="store-addr">14th Main Road, Indiranagar, Bengaluru</div>
+              <div class="store-dist">📍 1.2 km away · Open until 10 PM</div>
+            </div>
+          </div>
+          <div class="store-card" onclick="showScreen('home'); setActiveNav('home')">
+            <div class="store-icon">🛒</div>
+            <div class="store-info">
+              <div class="store-name">FreshMart – HSR Layout</div>
+              <div class="store-addr">Sector 3, 27th Main, HSR Layout</div>
+              <div class="store-dist">📍 2.7 km away · Open until 9 PM</div>
+            </div>
+          </div>
+          <div class="store-card" onclick="showScreen('home'); setActiveNav('home')">
+            <div class="store-icon">🏪</div>
+            <div class="store-info">
+              <div class="store-name">SuperSave – Whitefield</div>
+              <div class="store-addr">Whitefield Main Road, Bengaluru</div>
+              <div class="store-dist">📍 8.1 km away · Open 24/7</div>
+            </div>
+          </div>
+          <div class="store-card" onclick="showScreen('home'); setActiveNav('home')">
+            <div class="store-icon">🏬</div>
+            <div class="store-info">
+              <div class="store-name">MegaMart – Jayanagar</div>
+              <div class="store-addr">4th Block, Jayanagar, Bengaluru</div>
+              <div class="store-dist">📍 4.5 km away · Open until 9:30 PM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOME SCREEN -->
+      <div class="screen" id="home">
+        <div class="home-hero">
+          <div class="home-greeting">Good morning,</div>
+          <div class="home-name">Priya Sharma ✨</div>
+          <div class="home-store-badge">📍 FreshMart – Koramangala</div>
+        </div>
+
+        <div class="section-title-sm">Quick Actions</div>
+        <div class="quick-actions">
+          <div class="quick-action" onclick="showScreen('scanner'); setActiveNav('scan')">
+            <div class="qa-icon">📷</div>
+            <div class="qa-label">Scan Item</div>
+            <div class="qa-sub">Point &amp; scan barcode</div>
+          </div>
+          <div class="quick-action" onclick="showScreen('cart'); setActiveNav('cart')">
+            <div class="qa-icon">🛒</div>
+            <div class="qa-label">My Cart</div>
+            <div class="qa-sub">4 items · ₹370</div>
+          </div>
+          <div class="quick-action">
+            <div class="qa-icon">🎫</div>
+            <div class="qa-label">Offers</div>
+            <div class="qa-sub">3 active deals</div>
+          </div>
+          <div class="quick-action" onclick="showScreen('profile'); setActiveNav('profile')">
+            <div class="qa-icon">⭐</div>
+            <div class="qa-label">Loyalty</div>
+            <div class="qa-sub">1,240 pts</div>
+          </div>
+        </div>
+
+        <div class="section-title-sm">🔥 Active Offers</div>
+        <div class="offers-scroll">
+          <div class="offer-chip">
+            <span class="offer-code">SCAN20</span>
+            <span class="offer-desc">20% off on groceries</span>
+          </div>
+          <div class="offer-chip">
+            <span class="offer-code">FIRST50</span>
+            <span class="offer-desc">₹50 off 1st order</span>
+          </div>
+          <div class="offer-chip">
+            <span class="offer-code">UPI10</span>
+            <span class="offer-desc">10% cashback via UPI</span>
+          </div>
+          <div class="offer-chip">
+            <span class="offer-code">FRESH15</span>
+            <span class="offer-desc">15% off fresh items</span>
+          </div>
+        </div>
+
+        <div class="section-title-sm">🕐 Recent Orders</div>
+        <div class="scan-result-card" onclick="showScreen('receipt')">
+          <div class="product-thumb">🧾</div>
+          <div class="product-info">
+            <div class="product-name">Order #ORD-4821</div>
+            <div class="product-brand">Yesterday · 12 items · FreshMart</div>
+          </div>
+          <div class="product-price">₹1,234</div>
+        </div>
+        <div class="scan-result-card">
+          <div class="product-thumb">🧾</div>
+          <div class="product-info">
+            <div class="product-name">Order #ORD-4820</div>
+            <div class="product-brand">2 days ago · 7 items · FreshMart</div>
+          </div>
+          <div class="product-price">₹687</div>
+        </div>
+        <div class="scan-result-card">
+          <div class="product-thumb">🧾</div>
+          <div class="product-info">
+            <div class="product-name">Order #ORD-4819</div>
+            <div class="product-brand">5 days ago · 3 items · SuperSave</div>
+          </div>
+          <div class="product-price">₹342</div>
+        </div>
+      </div>
+
+      <!-- SCANNER SCREEN -->
+      <div class="screen" id="scanner">
+        <div class="scanner-header">
+          <h2>📷 Scan Product</h2>
+          <span style="color:var(--muted);font-size:0.82rem;">4 items in cart</span>
+        </div>
+        <div class="scanner-viewport">
+          <div class="scanner-bg">
+            <div class="scan-pulse"></div>
+            <div class="scan-pulse"></div>
+            <div class="scan-pulse"></div>
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
+            <div class="scan-line"></div>
+            <div style="font-size:2.5rem;opacity:0.08;z-index:1;">▦</div>
+          </div>
+        </div>
+        <div class="scanner-hint">
+          🔦 Tap to toggle flashlight &nbsp;|&nbsp; 🔄 Switch camera &nbsp;|&nbsp; 📷 Manual entry
+        </div>
+
+        <div class="recent-scans">
+          <div class="section-title-sm">Recently Scanned</div>
+          <div class="scan-result-card">
+            <div class="product-thumb">🥛</div>
+            <div class="product-info">
+              <div class="product-name">Amul Gold Milk 1L</div>
+              <div class="product-brand">Amul · 8901030780183</div>
+            </div>
+            <div class="product-price">₹68</div>
+            <button class="add-btn" onclick="showScreen('cart'); setActiveNav('cart')">+</button>
+          </div>
+          <div class="scan-result-card">
+            <div class="product-thumb">🍞</div>
+            <div class="product-info">
+              <div class="product-name">Britannia Brown Bread</div>
+              <div class="product-brand">Britannia · 8901063026810</div>
+            </div>
+            <div class="product-price">₹45</div>
+            <button class="add-btn">+</button>
+          </div>
+          <div class="scan-result-card">
+            <div class="product-thumb">🧃</div>
+            <div class="product-info">
+              <div class="product-name">Real Juice – Orange 1L</div>
+              <div class="product-brand">Dabur · 8906001890038</div>
+            </div>
+            <div class="product-price">₹120</div>
+            <button class="add-btn">+</button>
+          </div>
+          <div class="scan-result-card">
+            <div class="product-thumb">🍫</div>
+            <div class="product-info">
+              <div class="product-name">Dairy Milk Silk 60g</div>
+              <div class="product-brand">Cadbury · 7622210721846</div>
+            </div>
+            <div class="product-price">₹99</div>
+            <button class="add-btn">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CART SCREEN -->
+      <div class="screen" id="cart">
+        <div class="screen-header">
+          <h2>🛒 My Cart</h2>
+          <p>4 items · Updated just now</p>
+        </div>
+
+        <div class="cart-item">
+          <div class="product-thumb" style="width:48px;height:48px;font-size:1.4rem;">🥛</div>
+          <div class="product-info" style="flex:1;">
+            <div class="product-name" style="font-size:0.88rem;">Amul Gold Milk 1L</div>
+            <div class="product-brand">₹68 each</div>
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="updateQty(this,-1)">−</button>
+            <span class="qty-num">2</span>
+            <button class="qty-btn" onclick="updateQty(this,1)">+</button>
+          </div>
+        </div>
+        <div class="cart-item">
+          <div class="product-thumb" style="width:48px;height:48px;font-size:1.4rem;">🍞</div>
+          <div class="product-info" style="flex:1;">
+            <div class="product-name" style="font-size:0.88rem;">Britannia Brown Bread 400g</div>
+            <div class="product-brand">₹45 each</div>
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="updateQty(this,-1)">−</button>
+            <span class="qty-num">1</span>
+            <button class="qty-btn" onclick="updateQty(this,1)">+</button>
+          </div>
+        </div>
+        <div class="cart-item">
+          <div class="product-thumb" style="width:48px;height:48px;font-size:1.4rem;">🧃</div>
+          <div class="product-info" style="flex:1;">
+            <div class="product-name" style="font-size:0.88rem;">Real Juice – Orange 1L</div>
+            <div class="product-brand">₹120 each</div>
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="updateQty(this,-1)">−</button>
+            <span class="qty-num">1</span>
+            <button class="qty-btn" onclick="updateQty(this,1)">+</button>
+          </div>
+        </div>
+        <div class="cart-item">
+          <div class="product-thumb" style="width:48px;height:48px;font-size:1.4rem;">🍫</div>
+          <div class="product-info" style="flex:1;">
+            <div class="product-name" style="font-size:0.88rem;">Dairy Milk Silk 60g</div>
+            <div class="product-brand">₹99 each</div>
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="updateQty(this,-1)">−</button>
+            <span class="qty-num">1</span>
+            <button class="qty-btn" onclick="updateQty(this,1)">+</button>
+          </div>
+        </div>
+
+        <div class="coupon-bar">
+          <input class="coupon-input" placeholder="🎫 Enter coupon code…" />
+          <button class="apply-btn">Apply</button>
+        </div>
+
+        <div class="cart-summary">
+          <div class="summary-row"><span>Subtotal (5 items)</span><span>₹400</span></div>
+          <div class="summary-row"><span>GST (5%)</span><span>₹20</span></div>
+          <div class="summary-row"><span>Loyalty Discount</span><span style="color:var(--secondary);">−₹50</span></div>
+          <div class="summary-row"><span>Store Delivery</span><span style="color:var(--secondary);">FREE</span></div>
+          <div class="summary-row total"><span>Total Payable</span><span>₹370</span></div>
+        </div>
+
+        <button class="btn-full" style="margin-top:16px;" onclick="showScreen('checkout')">
+          Proceed to Checkout →
+        </button>
+        <button class="btn-outline" onclick="showScreen('scanner'); setActiveNav('scan')">
+          + Add More Items
+        </button>
+      </div>
+
+      <!-- CHECKOUT / PAYMENT SCREEN -->
+      <div class="screen" id="checkout">
+        <div class="screen-header">
+          <h2>💳 Payment</h2>
+          <p>Choose your payment method</p>
+        </div>
+
+        <div class="checkout-summary">
+          <div class="checkout-total">
+            <span>Total Amount</span>
+            <span style="color:var(--secondary);">₹370</span>
+          </div>
+          <div style="color:var(--muted);font-size:0.8rem;margin-top:6px;">4 items · FreshMart Koramangala</div>
+          <div class="loyalty-points">
+            ⭐ You'll earn <strong style="color:var(--warning);margin:0 4px;">37 loyalty points</strong> on this purchase
+          </div>
+        </div>
+
+        <div class="payment-methods">
+          <div class="payment-method selected" onclick="selectPayment(this)">
+            <span class="payment-icon">📱</span>
+            <div class="payment-info">
+              <div class="payment-name">UPI</div>
+              <div class="payment-desc">Pay via GPay, PhonePe, Paytm, BHIM</div>
+            </div>
+            <div class="payment-radio"></div>
+          </div>
+          <div class="payment-method" onclick="selectPayment(this)">
+            <span class="payment-icon">💳</span>
+            <div class="payment-info">
+              <div class="payment-name">Credit / Debit Card</div>
+              <div class="payment-desc">Visa, Mastercard, RuPay, Amex</div>
+            </div>
+            <div class="payment-radio"></div>
+          </div>
+          <div class="payment-method" onclick="selectPayment(this)">
+            <span class="payment-icon">👛</span>
+            <div class="payment-info">
+              <div class="payment-name">Wallet</div>
+              <div class="payment-desc">Paytm, Amazon Pay, Mobikwik</div>
+            </div>
+            <div class="payment-radio"></div>
+          </div>
+          <div class="payment-method" onclick="selectPayment(this)">
+            <span class="payment-icon">🏦</span>
+            <div class="payment-info">
+              <div class="payment-name">Net Banking</div>
+              <div class="payment-desc">SBI, HDFC, ICICI, Axis &amp; more</div>
+            </div>
+            <div class="payment-radio"></div>
+          </div>
+          <div class="payment-method" onclick="selectPayment(this)">
+            <span class="payment-icon">💰</span>
+            <div class="payment-info">
+              <div class="payment-name">Pay with Points</div>
+              <div class="payment-desc">Use 1,240 pts = ₹124 balance</div>
+            </div>
+            <div class="payment-radio"></div>
+          </div>
+        </div>
+
+        <button class="btn-full" onclick="showScreen('receipt'); setActiveNav('home')">
+          🔒 Pay ₹370 Securely
+        </button>
+        <p style="text-align:center;color:var(--muted);font-size:0.73rem;margin-top:12px;line-height:1.6;">
+          🔒 256-bit SSL encrypted · Verified by Razorpay<br/>Your payment info is never stored on this device
+        </p>
+      </div>
+
+      <!-- RECEIPT SCREEN -->
+      <div class="screen" id="receipt">
+        <div class="receipt-success">
+          <div class="success-icon">✓</div>
+          <h2 style="font-size:1.35rem;font-weight:800;margin-bottom:4px;">Payment Successful!</h2>
+          <p style="color:var(--muted);font-size:0.83rem;">Your receipt is ready. Show QR at exit.</p>
+        </div>
+
+        <div class="receipt-card">
+          <div class="receipt-header">
+            <div class="receipt-shop">🛒 FreshMart – Koramangala</div>
+            <div class="receipt-date">09 Jun 2026 · 10:30 AM · Self-Checkout Lane 3</div>
+          </div>
+          <div class="receipt-items">
+            <div class="receipt-item">
+              <span class="receipt-item-name">Amul Gold Milk 1L × 2</span>
+              <span>₹136</span>
+            </div>
+            <div class="receipt-item">
+              <span class="receipt-item-name">Britannia Brown Bread × 1</span>
+              <span>₹45</span>
+            </div>
+            <div class="receipt-item">
+              <span class="receipt-item-name">Real Juice Orange 1L × 1</span>
+              <span>₹120</span>
+            </div>
+            <div class="receipt-item">
+              <span class="receipt-item-name">Dairy Milk Silk 60g × 1</span>
+              <span>₹99</span>
+            </div>
+          </div>
+          <div class="receipt-totals">
+            <div class="receipt-row"><span>Subtotal</span><span>₹400</span></div>
+            <div class="receipt-row"><span>GST (5%)</span><span>₹20</span></div>
+            <div class="receipt-row"><span>Loyalty Discount</span><span>−₹50</span></div>
+            <div class="receipt-row final"><span>TOTAL PAID</span><span>₹370</span></div>
+          </div>
+          <div class="receipt-txn">
+            <div class="txn-id">TXN: SGO-20260609-A7F2B3C1 · UPI · Razorpay Verified ✓</div>
+          </div>
+        </div>
+
+        <div class="exit-qr">
+          <h3>🚪 Exit Gate QR Code</h3>
+          <div class="qr-inner" id="qrGrid"></div>
+          <p>Show this code to security at the exit gate to leave the store</p>
+        </div>
+
+        <div class="qr-timer">
+          ⏱️ QR expires in <strong id="qrCountdown" style="margin-left:4px;">29:59</strong>
+        </div>
+
+        <div style="background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2);border-radius:14px;padding:14px;margin-bottom:14px;width:100%;">
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:6px;">⭐ Loyalty Points Earned</div>
+          <div style="font-size:1.2rem;font-weight:800;color:var(--secondary);">+37 points</div>
+          <div style="font-size:0.75rem;color:var(--muted);">New balance: 1,277 points = ₹127.70</div>
+        </div>
+
+        <button class="btn-full" onclick="showScreen('home'); setActiveNav('home')" style="background:linear-gradient(135deg,var(--secondary),#00A880);">
+          🏠 Back to Home
+        </button>
+        <button class="btn-outline" style="margin-top:8px;">
+          📤 Share Receipt
+        </button>
+      </div>
+
+      <!-- PROFILE SCREEN -->
+      <div class="screen" id="profile">
+        <div class="profile-header">
+          <div class="avatar">👤</div>
+          <div class="profile-name">Priya Sharma</div>
+          <div class="profile-phone">+91 98765 43210</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,183,0,0.15);border-radius:100px;padding:4px 14px;font-size:0.75rem;color:var(--warning);">
+            👑 Gold Member
+          </div>
+        </div>
+
+        <div class="loyalty-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div class="loyalty-label">⭐ Loyalty Points Balance</div>
+              <div class="loyalty-points-num">1,240 pts</div>
+              <div class="loyalty-sub">≈ ₹124.00 in rewards</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:0.72rem;opacity:0.7;margin-bottom:4px;">Next tier at</div>
+              <div style="font-size:1rem;font-weight:700;">2,000 pts</div>
+              <div style="font-size:0.68rem;opacity:0.6;">🏆 Platinum</div>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.15);border-radius:100px;height:6px;margin-top:14px;overflow:hidden;">
+            <div style="width:62%;height:100%;background:rgba(255,255,255,0.7);border-radius:100px;"></div>
+          </div>
+          <div style="font-size:0.7rem;opacity:0.65;margin-top:6px;">760 more points to Platinum status</div>
+        </div>
+
+        <div class="menu-list">
+          <div class="menu-item"><span class="menu-icon">📋</span><span class="menu-label">Order History</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item"><span class="menu-icon">💳</span><span class="menu-label">Saved Payment Methods</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item"><span class="menu-icon">🎫</span><span class="menu-label">My Coupons &amp; Offers</span><span class="menu-badge">3</span><span class="menu-arrow" style="margin-left:8px;">›</span></div>
+          <div class="menu-item"><span class="menu-icon">📍</span><span class="menu-label">Saved Stores</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item"><span class="menu-icon">🔔</span><span class="menu-label">Notifications</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item"><span class="menu-icon">👤</span><span class="menu-label">Edit Profile</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item"><span class="menu-icon">🔒</span><span class="menu-label">Privacy &amp; Security</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item"><span class="menu-icon">❓</span><span class="menu-label">Help &amp; Support</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item"><span class="menu-icon">⭐</span><span class="menu-label">Rate ScanGo App</span><span class="menu-arrow">›</span></div>
+          <div class="menu-item" style="color:var(--accent);" onclick="showScreen('splash')">
+            <span class="menu-icon">🚪</span>
+            <span class="menu-label">Sign Out</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /screen-container -->
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" id="nav-home" onclick="showScreen('home');setActiveNav('home')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Home</span>
+      </button>
+      <button class="nav-item" id="nav-orders" onclick="showScreen('receipt');setActiveNav('orders')">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Orders</span>
+      </button>
+      <button class="nav-scan-btn" id="nav-scan" onclick="showScreen('scanner');setActiveNav('scan')">
+        📷
+      </button>
+      <button class="nav-item" id="nav-cart" onclick="showScreen('cart');setActiveNav('cart')" style="position:relative;">
+        <span class="nav-icon-wrap">
+          <span class="nav-icon">🛒</span>
+          <span class="cart-badge">4</span>
+        </span>
+        <span class="nav-label">Cart</span>
+      </button>
+      <button class="nav-item" id="nav-profile" onclick="showScreen('profile');setActiveNav('profile')">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Profile</span>
+      </button>
+    </nav>
+  </div><!-- /phone -->
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;">
+    <span style="color:var(--muted);font-size:0.78rem;padding:7px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
+      📱 ScanGo v2.4.1 · Customer App
+    </span>
+    <a href="../index.html" style="color:#8888AA;text-decoration:none;font-size:0.78rem;padding:7px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;">
+      ← Back to Home
+    </a>
+    <a href="../admin/index.html" style="color:#6C63FF;text-decoration:none;font-size:0.78rem;padding:7px 14px;border:1px solid rgba(108,99,255,0.3);border-radius:8px;">
+      ⚡ Admin Dashboard
+    </a>
+  </div>
+</div>
+
+<script>
+  // === Screen navigation ===
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const s = document.getElementById(id);
+    if (s) {
+      s.classList.add('active');
+      s.scrollTop = 0;
+    }
+  }
+
+  function setActiveNav(id) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navEl = document.getElementById('nav-' + id);
+    if (navEl) navEl.classList.add('active');
+  }
+
+  function showLoginStep(step) {
+    document.querySelectorAll('.login-step').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById('step-' + step);
+    if (el) el.classList.add('active');
+  }
+
+  function selectPayment(el) {
+    document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function updateQty(btn, delta) {
+    const span = btn.parentElement.querySelector('.qty-num');
+    let q = parseInt(span.textContent) + delta;
+    if (q < 0) q = 0;
+    span.textContent = q;
+  }
+
+  // === OTP auto-advance ===
+  document.querySelectorAll('.otp-box').forEach((box, i, boxes) => {
+    box.addEventListener('input', () => {
+      if (box.value.length === 1 && i < boxes.length - 1) {
+        boxes[i + 1].focus();
+      }
+    });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && box.value === '' && i > 0) {
+        boxes[i - 1].focus();
+      }
+    });
+  });
+
+  // === Generate QR Grid ===
+  function genQR() {
+    const grid = document.getElementById('qrGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    // Deterministic pattern seeded from a fake hash
+    const seed = 'SGO-20260609-A7F2B3C1';
+    let h = 0;
+    for (let c of seed) h = (Math.imul(31, h) + c.charCodeAt(0)) | 0;
+
+    for (let i = 0; i < 100; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'qr-cell';
+      // Corner squares always filled (3x3 blocks in corners)
+      const row = Math.floor(i / 10);
+      const col = i % 10;
+      const inTL = row < 3 && col < 3;
+      const inTR = row < 3 && col >= 7;
+      const inBL = row >= 7 && col < 3;
+      let filled;
+      if (inTL || inTR || inBL) {
+        // Border of corner = filled, inside = empty unless center
+        const rr = inTL ? row : (inTR ? row : row - 7);
+        const cc = inTL ? col : (inTR ? col - 7 : col);
+        filled = (rr === 0 || rr === 2 || cc === 0 || cc === 2) ? true : (rr === 1 && cc === 1);
+      } else {
+        // Pseudo-random
+        h = (Math.imul(1664525, h) + 1013904223) | 0;
+        filled = (h >>> 0) % 3 !== 0;
+      }
+      cell.style.background = filled ? '#111' : '#f5f5f5';
+      grid.appendChild(cell);
+    }
+  }
+
+  // === QR Countdown Timer ===
+  let qrSeconds = 30 * 60 - 1;
+  function updateQRTimer() {
+    const el = document.getElementById('qrCountdown');
+    if (!el) return;
+    const m = String(Math.floor(qrSeconds / 60)).padStart(2, '0');
+    const s = String(qrSeconds % 60).padStart(2, '0');
+    el.textContent = m + ':' + s;
+    if (qrSeconds > 0) qrSeconds--;
+  }
+
+  // === OTP Timer ===
+  let otpSec = 45;
+  function updateOTPTimer() {
+    const el = document.getElementById('otpTimerVal');
+    if (!el) return;
+    const m = String(Math.floor(otpSec / 60)).padStart(2, '0');
+    const s = String(otpSec % 60).padStart(2, '0');
+    el.textContent = m + ':' + s;
+    if (otpSec > 0) otpSec--;
+  }
+
+  // Init
+  genQR();
+  setInterval(updateQRTimer, 1000);
+  setInterval(updateOTPTimer, 1000);
+</script>
+</body>
+</html>

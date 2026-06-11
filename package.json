@@ -1,0 +1,13 @@
+{
+  "name": "retail-selfcheckout",
+  "version": "1.0.0",
+  "description": "Retail Self-Checkout App & Dashboard Simulator",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve ."
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}
