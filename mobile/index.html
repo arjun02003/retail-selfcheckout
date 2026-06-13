@@ -6,6 +6,7 @@
   <meta name="description" content="ScanGo Customer Self-Checkout Mobile App" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -333,13 +334,20 @@
       animation: scanMove 2s ease-in-out infinite;
       border-radius: 2px;
       box-shadow: 0 0 20px var(--secondary);
+      z-index: 10;
     }
     @keyframes scanMove {
       0% { top: 40px; }
       50% { top: calc(100% - 40px); }
       100% { top: 40px; }
     }
-    .corner { position: absolute; width: 40px; height: 40px; }
+    .corner { position: absolute; width: 40px; height: 40px; z-index: 10; }
+    #qr-reader video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      border-radius: 24px;
+    }
     .corner.tl { top: 20px; left: 20px; border-top: 3px solid var(--secondary); border-left: 3px solid var(--secondary); border-radius: 4px 0 0 0; }
     .corner.tr { top: 20px; right: 20px; border-top: 3px solid var(--secondary); border-right: 3px solid var(--secondary); border-radius: 0 4px 0 0; }
     .corner.bl { bottom: 20px; left: 20px; border-bottom: 3px solid var(--secondary); border-left: 3px solid var(--secondary); border-radius: 0 0 0 4px; }
@@ -631,6 +639,7 @@
       animation: pulsering 2s ease-out infinite;
       top: 50%; left: 50%;
       transform: translate(-50%,-50%);
+      z-index: 10;
     }
     .scan-pulse:nth-child(2) { animation-delay: 0.6s; }
     .scan-pulse:nth-child(3) { animation-delay: 1.2s; }
@@ -908,10 +917,11 @@
       <div class="screen" id="scanner">
         <div class="scanner-header">
           <h2>📷 Scan Product</h2>
-          <span style="color:var(--muted);font-size:0.82rem;">4 items in cart</span>
+          <span style="color:var(--muted);font-size:0.82rem;" class="cart-items-count-text">0 items in cart</span>
         </div>
         <div class="scanner-viewport">
           <div class="scanner-bg">
+            <div id="qr-reader" style="width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; border-radius: 24px; overflow: hidden;"></div>
             <div class="scan-pulse"></div>
             <div class="scan-pulse"></div>
             <div class="scan-pulse"></div>
@@ -923,8 +933,8 @@
             <div style="font-size:2.5rem;opacity:0.08;z-index:1;">▦</div>
           </div>
         </div>
-        <div class="scanner-hint">
-          🔦 Tap to toggle flashlight &nbsp;|&nbsp; 🔄 Switch camera &nbsp;|&nbsp; 📷 Manual entry
+        <div class="scanner-hint" id="scanner-status-text">
+          📷 Scan any barcode or QR code
         </div>
 
         <div class="recent-scans">
@@ -972,69 +982,24 @@
       <div class="screen" id="cart">
         <div class="screen-header">
           <h2>🛒 My Cart</h2>
-          <p>4 items · Updated just now</p>
+          <p id="cartHeaderSubtext">0 items · Updated just now</p>
         </div>
 
-        <div class="cart-item">
-          <div class="product-thumb" style="width:48px;height:48px;font-size:1.4rem;">🥛</div>
-          <div class="product-info" style="flex:1;">
-            <div class="product-name" style="font-size:0.88rem;">Amul Gold Milk 1L</div>
-            <div class="product-brand">₹68 each</div>
-          </div>
-          <div class="qty-control">
-            <button class="qty-btn" onclick="updateQty(this,-1)">−</button>
-            <span class="qty-num">2</span>
-            <button class="qty-btn" onclick="updateQty(this,1)">+</button>
-          </div>
-        </div>
-        <div class="cart-item">
-          <div class="product-thumb" style="width:48px;height:48px;font-size:1.4rem;">🍞</div>
-          <div class="product-info" style="flex:1;">
-            <div class="product-name" style="font-size:0.88rem;">Britannia Brown Bread 400g</div>
-            <div class="product-brand">₹45 each</div>
-          </div>
-          <div class="qty-control">
-            <button class="qty-btn" onclick="updateQty(this,-1)">−</button>
-            <span class="qty-num">1</span>
-            <button class="qty-btn" onclick="updateQty(this,1)">+</button>
-          </div>
-        </div>
-        <div class="cart-item">
-          <div class="product-thumb" style="width:48px;height:48px;font-size:1.4rem;">🧃</div>
-          <div class="product-info" style="flex:1;">
-            <div class="product-name" style="font-size:0.88rem;">Real Juice – Orange 1L</div>
-            <div class="product-brand">₹120 each</div>
-          </div>
-          <div class="qty-control">
-            <button class="qty-btn" onclick="updateQty(this,-1)">−</button>
-            <span class="qty-num">1</span>
-            <button class="qty-btn" onclick="updateQty(this,1)">+</button>
-          </div>
-        </div>
-        <div class="cart-item">
-          <div class="product-thumb" style="width:48px;height:48px;font-size:1.4rem;">🍫</div>
-          <div class="product-info" style="flex:1;">
-            <div class="product-name" style="font-size:0.88rem;">Dairy Milk Silk 60g</div>
-            <div class="product-brand">₹99 each</div>
-          </div>
-          <div class="qty-control">
-            <button class="qty-btn" onclick="updateQty(this,-1)">−</button>
-            <span class="qty-num">1</span>
-            <button class="qty-btn" onclick="updateQty(this,1)">+</button>
-          </div>
+        <div id="cartItemsList">
+          <!-- Rendered dynamically -->
         </div>
 
         <div class="coupon-bar">
-          <input class="coupon-input" placeholder="🎫 Enter coupon code…" />
-          <button class="apply-btn">Apply</button>
+          <input class="coupon-input" id="couponInputCode" placeholder="🎫 Enter coupon code…" />
+          <button class="apply-btn" onclick="applyCoupon()">Apply</button>
         </div>
 
         <div class="cart-summary">
-          <div class="summary-row"><span>Subtotal (5 items)</span><span>₹400</span></div>
-          <div class="summary-row"><span>GST (5%)</span><span>₹20</span></div>
-          <div class="summary-row"><span>Loyalty Discount</span><span style="color:var(--secondary);">−₹50</span></div>
+          <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">₹0</span></div>
+          <div class="summary-row"><span>GST (5%)</span><span id="cartTax">₹0</span></div>
+          <div class="summary-row"><span>Loyalty Discount</span><span style="color:var(--secondary);" id="cartDiscount">−₹0</span></div>
           <div class="summary-row"><span>Store Delivery</span><span style="color:var(--secondary);">FREE</span></div>
-          <div class="summary-row total"><span>Total Payable</span><span>₹370</span></div>
+          <div class="summary-row total"><span>Total Payable</span><span id="cartTotal">₹0</span></div>
         </div>
 
         <button class="btn-full" style="margin-top:16px;" onclick="showScreen('checkout')">
@@ -1055,11 +1020,11 @@
         <div class="checkout-summary">
           <div class="checkout-total">
             <span>Total Amount</span>
-            <span style="color:var(--secondary);">₹370</span>
+            <span style="color:var(--secondary);" id="checkoutTotalVal">₹0</span>
           </div>
-          <div style="color:var(--muted);font-size:0.8rem;margin-top:6px;">4 items · FreshMart Koramangala</div>
+          <div style="color:var(--muted);font-size:0.8rem;margin-top:6px;" id="checkoutSummarySubtext">0 items · FreshMart Koramangala</div>
           <div class="loyalty-points">
-            ⭐ You'll earn <strong style="color:var(--warning);margin:0 4px;">37 loyalty points</strong> on this purchase
+            ⭐ You'll earn <strong style="color:var(--warning);margin:0 4px;" id="checkoutEarnedPoints">0 loyalty points</strong> on this purchase
           </div>
         </div>
 
@@ -1125,34 +1090,19 @@
         <div class="receipt-card">
           <div class="receipt-header">
             <div class="receipt-shop">🛒 FreshMart – Koramangala</div>
-            <div class="receipt-date">09 Jun 2026 · 10:30 AM · Self-Checkout Lane 3</div>
+            <div class="receipt-date" id="receiptDateVal">09 Jun 2026 · 10:30 AM · Self-Checkout Lane 3</div>
           </div>
-          <div class="receipt-items">
-            <div class="receipt-item">
-              <span class="receipt-item-name">Amul Gold Milk 1L × 2</span>
-              <span>₹136</span>
-            </div>
-            <div class="receipt-item">
-              <span class="receipt-item-name">Britannia Brown Bread × 1</span>
-              <span>₹45</span>
-            </div>
-            <div class="receipt-item">
-              <span class="receipt-item-name">Real Juice Orange 1L × 1</span>
-              <span>₹120</span>
-            </div>
-            <div class="receipt-item">
-              <span class="receipt-item-name">Dairy Milk Silk 60g × 1</span>
-              <span>₹99</span>
-            </div>
+          <div class="receipt-items" id="receiptItemsList">
+            <!-- Rendered dynamically -->
           </div>
           <div class="receipt-totals">
-            <div class="receipt-row"><span>Subtotal</span><span>₹400</span></div>
-            <div class="receipt-row"><span>GST (5%)</span><span>₹20</span></div>
-            <div class="receipt-row"><span>Loyalty Discount</span><span>−₹50</span></div>
-            <div class="receipt-row final"><span>TOTAL PAID</span><span>₹370</span></div>
+            <div class="receipt-row"><span>Subtotal</span><span id="receiptSubtotal">₹0</span></div>
+            <div class="receipt-row"><span>GST (5%)</span><span id="receiptTax">₹0</span></div>
+            <div class="receipt-row"><span>Loyalty Discount</span><span id="receiptDiscount">−₹0</span></div>
+            <div class="receipt-row final"><span>TOTAL PAID</span><span id="receiptTotal">₹0</span></div>
           </div>
           <div class="receipt-txn">
-            <div class="txn-id">TXN: SGO-20260609-A7F2B3C1 · UPI · Razorpay Verified ✓</div>
+            <div class="txn-id" id="receiptTxnId">TXN: SGO-20260609-A7F2B3C1 · UPI · Razorpay Verified ✓</div>
           </div>
         </div>
 
@@ -1254,6 +1204,36 @@
         <span class="nav-label">Profile</span>
       </button>
     </nav>
+
+    <!-- Toast Notification Overlay inside Phone mockup -->
+    <div id="toastNotification" style="display:none; position:absolute; top:80px; left:20px; right:20px; background:rgba(0,212,170,0.95); color:#0D0D1F; border-radius:12px; padding:12px 16px; font-weight:700; font-size:0.85rem; text-align:center; z-index:150; box-shadow:0 10px 30px rgba(0,212,170,0.3); animation:slideDown 0.3s ease;">
+      Scanned Product successfully!
+    </div>
+
+    <!-- Custom Scan Product Modal -->
+    <div id="customProductModal" style="display:none; position:absolute; inset:0; background:rgba(10,10,30,0.9); z-index:200; align-items:center; justify-content:center; padding:24px; animation:fadeIn 0.2s ease;">
+      <div style="background:var(--dark2); border:1px solid var(--border); border-radius:20px; width:100%; padding:24px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+        <div style="font-size:2.5rem; margin-bottom:12px;">🏷️</div>
+        <h3 style="font-size:1.2rem; font-weight:800; margin-bottom:8px;">New Item Scanned</h3>
+        <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">This barcode is not in our system. Let's add it to the cart!</p>
+        <div style="font-family:monospace; font-size:0.8rem; background:rgba(255,255,255,0.05); padding:8px; border-radius:8px; margin-bottom:16px; color:var(--secondary);" id="scannedBarcodeText">
+          8901234567890
+        </div>
+        <div class="form-group" style="text-align:left; margin-bottom:12px;">
+          <label class="form-label" style="font-size:0.75rem;">Item Name</label>
+          <input class="form-input" id="customProductName" placeholder="e.g., Soda Can" value="Custom Product" style="padding:12px 14px;" />
+        </div>
+        <div class="form-group" style="text-align:left; margin-bottom:20px;">
+          <label class="form-label" style="font-size:0.75rem;">Price (₹)</label>
+          <input class="form-input" type="number" id="customProductPrice" placeholder="e.g., 50" value="50" style="padding:12px 14px;" />
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-full" style="flex:1; padding:12px; font-size:0.9rem;" onclick="submitCustomProduct()">Add Item</button>
+          <button class="btn-outline" style="flex:1; margin-top:0; padding:12px; font-size:0.9rem;" onclick="closeCustomProductModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /phone -->
 
   <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:500px;">
@@ -1270,13 +1250,333 @@
 </div>
 
 <script>
+  // === Product Database ===
+  const DB_PRODUCTS = {
+    "8901030780183": { name: "Amul Gold Milk 1L", brand: "Amul", price: 68, thumb: "🥛" },
+    "8901063026810": { name: "Britannia Brown Bread 400g", brand: "Britannia", price: 45, thumb: "🍞" },
+    "8906001890038": { name: "Real Juice – Orange 1L", brand: "Dabur", price: 120, thumb: "🧃" },
+    "7622210721846": { name: "Dairy Milk Silk 60g", brand: "Cadbury", price: 99, thumb: "🍫" }
+  };
+
+  // === Cart State ===
+  let cart = [
+    { id: "8901030780183", name: "Amul Gold Milk 1L", brand: "Amul", price: 68, thumb: "🥛", qty: 2 },
+    { id: "8901063026810", name: "Britannia Brown Bread 400g", brand: "Britannia", price: 45, thumb: "🍞", qty: 1 },
+    { id: "8906001890038", name: "Real Juice – Orange 1L", brand: "Dabur", price: 120, thumb: "🧃", qty: 1 },
+    { id: "7622210721846", name: "Dairy Milk Silk 60g", brand: "Cadbury", price: 99, thumb: "🍫", qty: 1 }
+  ];
+  let activeCoupon = null;
+
+  // === Dynamic Cart Rendering ===
+  function renderCart() {
+    const list = document.getElementById("cartItemsList");
+    if (!list) return;
+    list.innerHTML = "";
+
+    let subtotal = 0;
+    let itemCount = 0;
+
+    cart.forEach(item => {
+      itemCount += item.qty;
+      subtotal += item.price * item.qty;
+
+      const div = document.createElement("div");
+      div.className = "cart-item";
+      div.innerHTML = `
+        <div class="product-thumb" style="width:48px;height:48px;font-size:1.4rem;">\${item.thumb}</div>
+        <div class="product-info" style="flex:1;">
+          <div class="product-name" style="font-size:0.88rem;">\${item.name}</div>
+          <div class="product-brand">₹\${item.price} each</div>
+        </div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty('\${item.id}', -1)">−</button>
+          <span class="qty-num">\${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty('\${item.id}', 1)">+</button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+
+    // Calculations
+    const tax = Math.round(subtotal * 0.05); // 5% GST
+    let discount = 0;
+    if (subtotal > 0) {
+      if (activeCoupon === "SCAN20") discount = Math.round(subtotal * 0.20);
+      else if (activeCoupon === "FIRST50") discount = 50;
+      else if (activeCoupon === "UPI10") discount = Math.round(subtotal * 0.10);
+      else discount = 50; // default loyalty discount
+    }
+    const total = Math.max(0, subtotal + tax - discount);
+
+    // Update nav & headers
+    document.querySelectorAll(".cart-badge").forEach(badge => {
+      badge.textContent = itemCount;
+      badge.style.display = itemCount > 0 ? "flex" : "none";
+    });
+
+    const cartHeaderSubtext = document.getElementById("cartHeaderSubtext");
+    if (cartHeaderSubtext) cartHeaderSubtext.textContent = `\${itemCount} items · Updated just now`;
+
+    const countTexts = document.querySelectorAll(".cart-items-count-text");
+    countTexts.forEach(txt => {
+      txt.textContent = `\${itemCount} items in cart`;
+    });
+
+    // Update Home screen quick action subtext
+    const homeCartActionSub = document.querySelector(".quick-action[onclick*='cart'] .qa-sub");
+    if (homeCartActionSub) homeCartActionSub.textContent = `\${itemCount} items · ₹\${total}`;
+
+    // Update Cart Summary
+    const subtotalEl = document.getElementById("cartSubtotal");
+    const taxEl = document.getElementById("cartTax");
+    const discountEl = document.getElementById("cartDiscount");
+    const totalEl = document.getElementById("cartTotal");
+
+    if (subtotalEl) subtotalEl.textContent = `₹\${subtotal}`;
+    if (taxEl) taxEl.textContent = `₹\${tax}`;
+    if (discountEl) discountEl.textContent = `−₹\${discount}`;
+    if (totalEl) totalEl.textContent = `₹\${total}`;
+
+    // Update Checkout Summary
+    const checkoutTotalVal = document.getElementById("checkoutTotalVal");
+    const checkoutSummarySubtext = document.getElementById("checkoutSummarySubtext");
+    const checkoutEarnedPoints = document.getElementById("checkoutEarnedPoints");
+
+    if (checkoutTotalVal) checkoutTotalVal.textContent = `₹\${total}`;
+    if (checkoutSummarySubtext) checkoutSummarySubtext.textContent = `\${itemCount} items · FreshMart Koramangala`;
+    if (checkoutEarnedPoints) checkoutEarnedPoints.textContent = `\${Math.round(total / 10)} loyalty points`;
+
+    // Update Receipt Screen
+    const receiptSubtotal = document.getElementById("receiptSubtotal");
+    const receiptTax = document.getElementById("receiptTax");
+    const receiptDiscount = document.getElementById("receiptDiscount");
+    const receiptTotal = document.getElementById("receiptTotal");
+
+    if (receiptSubtotal) receiptSubtotal.textContent = `₹\${subtotal}`;
+    if (receiptTax) receiptTax.textContent = `₹\${tax}`;
+    if (receiptDiscount) receiptDiscount.textContent = `−₹\${discount}`;
+    if (receiptTotal) receiptTotal.textContent = `₹\${total}`;
+
+    // Update Receipt Items
+    const receiptItemsList = document.getElementById("receiptItemsList");
+    if (receiptItemsList) {
+      receiptItemsList.innerHTML = "";
+      cart.forEach(item => {
+        const itemRow = document.createElement("div");
+        itemRow.className = "receipt-item";
+        itemRow.innerHTML = `
+          <span class="receipt-item-name">\${item.name} × \${item.qty}</span>
+          <span>₹\${item.price * item.qty}</span>
+        `;
+        receiptItemsList.appendChild(itemRow);
+      });
+    }
+
+    // Update Loyalty Points in Profile
+    const loyaltyPointsVal = document.querySelector(".loyalty-points-num");
+    if (loyaltyPointsVal) {
+      loyaltyPointsVal.textContent = `\${1240 + Math.round(total / 10)} pts`;
+    }
+  }
+
+  function changeQty(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+      item.qty += delta;
+      if (item.qty <= 0) {
+        cart = cart.filter(i => i.id !== id);
+      }
+      renderCart();
+    }
+  }
+
+  function applyCoupon() {
+    const code = document.getElementById("couponInputCode").value.trim().toUpperCase();
+    if (["SCAN20", "FIRST50", "UPI10"].includes(code)) {
+      activeCoupon = code;
+      showToast(`Coupon \${code} applied successfully!`);
+      renderCart();
+    } else {
+      showToast("Invalid Coupon Code");
+    }
+  }
+
+  // === Audio Feedback Beep ===
+  function playBeep() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // 800Hz beep sound
+      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.12);
+    } catch (e) {
+      console.log("Audio feedback not supported or blocked", e);
+    }
+  }
+
+  // === Barcode Processing ===
+  let lastScannedCode = null;
+
+  function handleScannedCode(code) {
+    if (code === lastScannedCode) return;
+    lastScannedCode = code;
+    setTimeout(() => { lastScannedCode = null; }, 3000); // 3-second throttle per barcode
+
+    if (DB_PRODUCTS[code]) {
+      const product = DB_PRODUCTS[code];
+      const existing = cart.find(i => i.id === code);
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({
+          id: code,
+          name: product.name,
+          brand: product.brand,
+          price: product.price,
+          thumb: product.thumb,
+          qty: 1
+        });
+      }
+      showToast(`Added: \${product.name}`);
+      renderCart();
+    } else {
+      // Barcode not in system, open custom modal
+      openCustomProductModal(code);
+    }
+  }
+
+  // === Custom Product Modal Handling ===
+  function openCustomProductModal(code) {
+    document.getElementById("scannedBarcodeText").textContent = code;
+    document.getElementById("customProductName").value = "Custom Item";
+    document.getElementById("customProductPrice").value = "50";
+    document.getElementById("customProductModal").style.display = "flex";
+  }
+
+  function closeCustomProductModal() {
+    document.getElementById("customProductModal").style.display = "none";
+  }
+
+  function submitCustomProduct() {
+    const code = document.getElementById("scannedBarcodeText").textContent;
+    const name = document.getElementById("customProductName").value.trim() || "Custom Item";
+    const price = Math.max(1, parseInt(document.getElementById("customProductPrice").value) || 50);
+
+    const existing = cart.find(i => i.id === code);
+    if (existing) {
+      existing.qty++;
+    } else {
+      cart.push({
+        id: code,
+        name: name,
+        brand: "Scanned",
+        price: price,
+        thumb: "🏷️",
+        qty: 1
+      });
+    }
+
+    closeCustomProductModal();
+    showToast(`Added: \${name}`);
+    renderCart();
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toastNotification");
+    if (!t) return;
+    t.textContent = msg;
+    t.style.display = "block";
+    setTimeout(() => { t.style.display = "none"; }, 2500);
+  }
+
+  // === Real Camera Scanner (HTML5 QR Code) ===
+  let html5QrCode = null;
+
+  function startScanner() {
+    const container = document.getElementById("qr-reader");
+    if (!container) return;
+    
+    // Clear status text
+    const statusText = document.getElementById("scanner-status-text");
+    if (statusText) statusText.textContent = "📷 Requesting camera access...";
+
+    if (html5QrCode) {
+      html5QrCode.stop().then(() => {
+        initScanner();
+      }).catch(err => {
+        console.log("Error stopping scanner, reinitializing", err);
+        initScanner();
+      });
+    } else {
+      initScanner();
+    }
+  }
+
+  function initScanner() {
+    html5QrCode = new Html5Qrcode("qr-reader");
+    const config = { fps: 12, qrbox: { width: 200, height: 200 } };
+    
+    html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText, decodedResult) => {
+        playBeep();
+        handleScannedCode(decodedText);
+      },
+      (errorMessage) => {
+        // Verbose scan failure log, skip
+      }
+    ).then(() => {
+      const statusText = document.getElementById("scanner-status-text");
+      if (statusText) statusText.textContent = "📷 Scanning... Point at a barcode or QR code";
+    }).catch(err => {
+      console.log("Error starting back camera, falling back to front camera", err);
+      html5QrCode.start(
+        { facingMode: "user" },
+        config,
+        (decodedText, decodedResult) => {
+          playBeep();
+          handleScannedCode(decodedText);
+        },
+        (errorMessage) => {}
+      ).then(() => {
+        const statusText = document.getElementById("scanner-status-text");
+        if (statusText) statusText.textContent = "📷 Front Cam Active. Point at a code";
+      }).catch(err2 => {
+        console.error("Camera access failed completely", err2);
+        const statusText = document.getElementById("scanner-status-text");
+        if (statusText) statusText.textContent = "❌ Camera access blocked or unavailable";
+      });
+    });
+  }
+
+  function stopScanner() {
+    if (html5QrCode && html5QrCode.isScanning) {
+      html5QrCode.stop().catch(err => console.log("Failed to stop scanner", err));
+    }
+  }
+
   // === Screen navigation ===
   function showScreen(id) {
+    const currentActive = document.querySelector('.screen.active');
+    if (currentActive && currentActive.id === 'scanner' && id !== 'scanner') {
+      stopScanner();
+    }
+
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const s = document.getElementById(id);
     if (s) {
       s.classList.add('active');
       s.scrollTop = 0;
+    }
+
+    if (id === 'scanner') {
+      startScanner();
     }
   }
 
@@ -1295,13 +1595,6 @@
   function selectPayment(el) {
     document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
     el.classList.add('selected');
-  }
-
-  function updateQty(btn, delta) {
-    const span = btn.parentElement.querySelector('.qty-num');
-    let q = parseInt(span.textContent) + delta;
-    if (q < 0) q = 0;
-    span.textContent = q;
   }
 
   // === OTP auto-advance ===
@@ -1323,7 +1616,6 @@
     const grid = document.getElementById('qrGrid');
     if (!grid) return;
     grid.innerHTML = '';
-    // Deterministic pattern seeded from a fake hash
     const seed = 'SGO-20260609-A7F2B3C1';
     let h = 0;
     for (let c of seed) h = (Math.imul(31, h) + c.charCodeAt(0)) | 0;
@@ -1331,7 +1623,6 @@
     for (let i = 0; i < 100; i++) {
       const cell = document.createElement('div');
       cell.className = 'qr-cell';
-      // Corner squares always filled (3x3 blocks in corners)
       const row = Math.floor(i / 10);
       const col = i % 10;
       const inTL = row < 3 && col < 3;
@@ -1339,12 +1630,10 @@
       const inBL = row >= 7 && col < 3;
       let filled;
       if (inTL || inTR || inBL) {
-        // Border of corner = filled, inside = empty unless center
         const rr = inTL ? row : (inTR ? row : row - 7);
         const cc = inTL ? col : (inTR ? col - 7 : col);
         filled = (rr === 0 || rr === 2 || cc === 0 || cc === 2) ? true : (rr === 1 && cc === 1);
       } else {
-        // Pseudo-random
         h = (Math.imul(1664525, h) + 1013904223) | 0;
         filled = (h >>> 0) % 3 !== 0;
       }
@@ -1377,6 +1666,7 @@
 
   // Init
   genQR();
+  renderCart();
   setInterval(updateQRTimer, 1000);
   setInterval(updateOTPTimer, 1000);
 </script>
